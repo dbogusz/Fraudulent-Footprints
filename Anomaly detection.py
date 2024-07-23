@@ -5,8 +5,6 @@
 # 
 # Link to the dataset: https://www.kaggle.com/datasets/mlg-ulb/creditcardfraud.
 
-# In[1]:
-
 
 # Standard Libraries
 import time
@@ -36,16 +34,12 @@ pal_ = list(sns.color_palette(palette='inferno_r',
 BinCol = [pal_[0], pal_[4]]
 
 
-# In[2]:
-
 
 # Importing data
 data = pd.read_csv('creditcard.csv')
 
 
 # # Exploratory data analysis
-
-# In[166]:
 
 
 data.columns
@@ -62,13 +56,8 @@ data.columns
 # **Class**: The status of the transaction concerning authenticity. The class of an authentic (resp. fraudulent) transaction is taken to be 0 (resp. 1).
 # 
 
-# In[167]:
-
-
 data.describe()
 
-
-# In[168]:
 
 
 if data.isnull().sum().all() == 0:
@@ -78,9 +67,6 @@ else:
 
 
 # There are two features: **time** and **amount** that stand out, due to a much larger range of values. Let's take a closer look at them. 
-
-# In[3]:
-
 
 # Define the number of bins using the cube root rule
 bins = math.floor(len(data) ** (1/3))
@@ -107,13 +93,6 @@ plt.show()
 
 
 # The "amount" feature exhibits significant skewness, with a predominance of smaller monetary values. To address this skewness and facilitate visualization across the entire range of values, I apply a logarithmic transformation to the feature. Additionally, I include a small positive constant, such as 0.001, to account for zero-amount transactions. This ensures the prevention of undefined quantities resulting from the logarithm of zero (log(0)).
-# 
-# 
-# 
-# 
-# 
-
-# In[3]:
 
 
 # Compute log-transformed values for 'Amount'
@@ -137,8 +116,6 @@ plt.show()
 
 
 # Finally, let's check the imbalance of the dataset.
-
-# In[5]:
 
 
 # Count the number of authentic and fraudulent transactions
@@ -209,8 +186,6 @@ plt.show()
 # 
 # As the dataset is highly imbalanced, thus I will not be considering the model's accuracy, instead deducing metrics such as **recall, precision** and **F-measure**.  
 
-# In[4]:
-
 
 from sklearn.metrics import confusion_matrix
 
@@ -258,8 +233,6 @@ def metrics(y_true, y_pred):
 
 # Amount and time of the transaction are two features that have widely different values than the rest. To make sure the data is on the same scale and improve the models' performance, I rescale these two.
 
-# In[5]:
-
 
 from sklearn.preprocessing import RobustScaler
 
@@ -272,9 +245,6 @@ data['scaled_time'] = rob_scaler.fit_transform(data['Time'].values.reshape(-1,1)
 data.head()
 
 
-# In[6]:
-
-
 data = data.drop(['Time', 'Amount', 'amount_log'], axis=1)
 
 
@@ -283,8 +253,6 @@ data = data.drop(['Time', 'Amount', 'amount_log'], axis=1)
 # ## Dataset split
 
 # I am splitting the data into training set, validation set and test set in 70-15-15 ratio. In this model, the fraudulent data is split only between the validation and test set, as the training set includes only the authenthic data to train the model to look for anomalies.
-
-# In[9]:
 
 
 data_A, data_F = data[data.Class == 0], data[data.Class == 1]
@@ -311,9 +279,6 @@ data_val, data_test = pd.concat([data_val_A, data_val_F], axis = 0), pd.concat([
 x_val, y_val = data_val.drop(columns = ['Class']), data_val['Class']
 x_test, y_test = data_test.drop(columns = ['Class']), data_test['Class']
 x_train = data_train.drop(columns = ['Class'])
-
-
-# In[10]:
 
 
 # Visualisation of the split 
@@ -353,8 +318,6 @@ fig.show()
 # 
 # Additionally, I will plot another correlation matrix with respect to the class (authentic or fraudulent) to verify the significance. To prevent data leakage, I am not using the whole dataset. As the training set includes only authentic transactions, I am using the validation set for this purpose.
 
-# In[21]:
-
 
 plt.figure(figsize=[5,3])
 sns.heatmap(data_val.corr(), cmap= 'coolwarm_r', cbar = True)
@@ -362,9 +325,6 @@ plt.title('Correlation matrix', fontname='Roboto', fontsize=12)
 plt.xticks(fontsize=8, fontname = 'Roboto')
 plt.yticks(fontsize=8, fontname = 'Roboto')
 plt.show()
-
-
-# In[282]:
 
 
 columns = data.columns
@@ -389,8 +349,6 @@ plt.show()
 
 # Features that will be used for training model:
 
-# In[283]:
-
 
 columns = data.columns
 columns = columns.drop(['Class', 'V5', 'V6', 'V8', 'V13', 'V15', 'V20', 'V21', 'V22', 'V23', 'V24', 'V25', 'V26', 'V27', 'V28'])
@@ -411,8 +369,6 @@ plt.show()
 
 
 # Now, let's see the correlation between the features and the target. I will exclude the features having correlation values between (-0.1,0.1).
-
-# In[15]:
 
 
 from matplotlib.colors import BoundaryNorm, ListedColormap
@@ -447,8 +403,6 @@ plt.show()
 
 # From the correlation matrix, the following features could be disregarded: **V6, V8, V13, V15, V19, V20, V21, V22, V23, V24, V25, V26, V27, V28**, largely agreeing with the visualisation estimation. To be on the safe side, I am dropping only the features that were deemed insignificant in both investigations. 
 
-# In[22]:
-
 
 # Feature selection
 cols = ['V3', 'V4', 'V7', 'V10', 'V11', 'V12', 'V14', 'V16', 'V17', 'V18', 'scaled_amount_log', 'scaled_time']
@@ -469,8 +423,6 @@ x_train_fs.head()
 # 
 # The probability density function (pdf) describes the likelihood of observing a particular value of the random variable.
 
-# In[17]:
-
 
 def normal_density(x, mu, sigma):
 
@@ -483,7 +435,6 @@ def normal_density(x, mu, sigma):
 
 # The following function calculates the product of these univariate normal densities. This can be interpreted as the joint probability density function (pdf) of several feature variables, each of which follows a univariate normal distribution and is statistically independent of the other features.
 
-# In[18]:
 
 
 def normal_product(x_vec, mu_vec, sigma_vec):
@@ -506,8 +457,6 @@ def normal_product(x_vec, mu_vec, sigma_vec):
 
 # Now to train this model on the training set, I compute the vector of means and vector of standard deviations for the chosen features. 
 
-# In[19]:
-
 
 mu_train, sigma_train = x_train_fs.mean().values, x_train_fs.std().values
 
@@ -525,8 +474,6 @@ def model_gaussian(X, epsilon):
 
 
 # To run the model, we need to choose the threshold density value $\epsilon$, such that observations with a pdf value below the threshold are classified as anomalies (fraudulent), while those above are considered normal. I use the validation data and **F2** metric to optimise the threshold value.a.
-
-# In[ ]:
 
 
 epsilon = np.arange(0.001, 0.051, 0.001)
@@ -551,15 +498,12 @@ plt.tight_layout()
 plt.show()
 
 
-# In[ ]:
-
 
 index_opt = f2_eps.index(max(f2_eps))
 eps_opt = epsilon[index_opt]
 y_pred_opt = y_pred[index_opt]
 
 
-# In[24]:
 
 
 show_conf_mat(y_val, y_pred_opt)
@@ -569,7 +513,6 @@ print('Precision:' + str(precision) + '\n' + 'Recall:' + str(recall) + '\n' + 'F
 
 # ## Evaluation on test dataset
 
-# In[25]:
 
 
 y_pred = model_gaussian(x_test_fs, eps_opt**x_test_fs.shape[1])
@@ -590,8 +533,6 @@ show_conf_mat(y_test, y_pred)
 # ## Dataset split
 
 # For the next models, I am splitting the data again. This time, the training set will also include fraudulent transactions. I divide the data into authentic and fraudulent transactions first, split them separately in the same ratios, and then merge them into the training, validation and test sets. This way, I ensure that the fraudulent transactions are distributed equally. 
-
-# In[7]:
 
 
 data_authentic, data_fraud = data[data.Class == 0], data[data.Class == 1]
@@ -621,8 +562,6 @@ x_test, y_test = data_test.drop(columns=['Class']), data_test['Class']
 
 
 # ## Default resampling
-
-# In[8]:
 
 
 import imblearn
@@ -691,8 +630,6 @@ scatterplot_dist(data_train, x_train, y_train)
 
 # ### SMOTE oversampling and random undersampling
 
-# In[9]:
-
 
 # Import necessary modules
 from imblearn.under_sampling import RandomUnderSampler
@@ -724,8 +661,6 @@ scatterplot_dist(data_resampled, x_resampled, y_resampled)
 
 # ## Feature selection
 
-# In[12]:
-
 
 from sklearn.ensemble import RandomForestClassifier
 
@@ -753,16 +688,12 @@ plt.ylabel("Feature importance")
 plt.show()
 
 
-# In[13]:
-
-
 cols = x_resampled.columns[list(indices[:12])]
 print(cols)
 
 
 # ## Training algorithms
 
-# In[14]:
 
 
 from sklearn.linear_model import LogisticRegression
@@ -815,9 +746,6 @@ def paramSearch(model, space, scoring, cv, x_train, y_train):
     return result
 
 
-# In[ ]:
-
-
 import warnings
 from sklearn.exceptions import FitFailedWarning
 
@@ -855,9 +783,6 @@ warnings.filterwarnings("ignore", category=UserWarning)
 resultLogReg = paramSearch(pipeline, space_LR, f2_score, cv, x_train[cols], y_train)
 
 
-# In[ ]:
-
-
 #Repeat for SVC
 
 # Define resampling techniques
@@ -875,10 +800,6 @@ space_SVC = {
 }
 
 resultSVC = paramSearch(pipeline, space_SVC, f2_score, cv, x_train[cols], y_train)
-
-
-# In[133]:
-
 
 #Repeat for RandomForestClassifier
 
@@ -901,8 +822,6 @@ space_RF = {
 resultRF = paramSearch(pipeline, space_RF, f2_score, cv, x_train, y_train)
 
 
-# In[77]:
-
 
 #Repeat for KNeighborsClassifier
 
@@ -921,8 +840,6 @@ space_KN = {'model__n_neighbors': k_range}
 
 resultKN = paramSearch(pipeline, space_KN, f2_score, cv, x_train, y_train)
 
-
-# In[ ]:
 
 
 # Define classifiers with specified hyperparameters
@@ -966,10 +883,6 @@ for classifier in classifiers:
     execution_time = time.time() - start_time
     times.append('{0:.2f}'.format(execution_time))
 
-
-
-
-# In[113]:
 
 
 # Define data as a dictionary
@@ -1034,8 +947,6 @@ plt.show()
 # 
 # I am also trying out method from the research paper https://www.ncbi.nlm.nih.gov/pmc/articles/PMC10535547/
 
-# In[60]:
-
 
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 from sklearn.linear_model import LinearRegression
@@ -1046,8 +957,6 @@ paper_LDA = LinearDiscriminantAnalysis(solver='svd', shrinkage=None, priors=None
                                        covariance_estimator=None)
 paper_LR = LinearRegression()
 
-
-# In[63]:
 
 
 # Train the model
@@ -1062,8 +971,6 @@ y_predLR = modelKNN.predict(X_val)
 
 mvLR = np.average(y_predLR)
 
-
-# In[68]:
 
 
 def custom_predict(pKNN, pLDA, pLR, mvLR):
@@ -1105,9 +1012,6 @@ print('Recall:' + str(r) + '<br>' +
 
 # I am using the best model, SVC, for the test data. 
 
-# In[16]:
-
-
 model = SVC(C = 0.1, gamma =0.0001, kernel = 'rbf').fit(X_train_resampled, Y_train_resampled)
 y_pred = model.predict(X_test)
 show_conf_mat(Y_test, y_pred)
@@ -1117,9 +1021,6 @@ print('Recall:' + '{0:.2}'.format(r) + '\n' +
       'Precision:' + '{0:.2}'.format(p) + '\n' +
       'F1 score:' + '{0:.2}'.format(f1) + '\n' +
       'F2 score:' + '{0:.2}'.format(f2) )
-
-
-# In[15]:
 
 
 model = LogisticRegression(C = 1e-05, penalty = 'l2', solver= 'lbfgs').fit(X_train_resampled, Y_train_resampled)
@@ -1135,8 +1036,6 @@ print('Recall:' + '{0:.2}'.format(r) + '\n' +
 
 # ## Models for Deployment
 
-# In[16]:
-
 
 import pickle
 
@@ -1145,9 +1044,6 @@ logistic_regression = pickle.dump(LogReg_Deploy, open('logreg_model', 'wb'))
 
 SVC_Deploy = SVC(C = 0.1, gamma =0.0001, kernel = 'rbf').fit(X_train_resampled, Y_train_resampled)
 svc = pickle.dump(SVC_Deploy, open('svc_model', 'wb'))
-
-
-# In[ ]:
 
 
 
